@@ -1,0 +1,14 @@
+[Unit]
+Description=Daily Sungrow Data Sync Timer
+Requires=scheduler.service
+
+[Timer]
+# Executar diariamente às 02:00
+OnCalendar=daily
+Persistent=true
+
+# Aleatorizar início em até 5 minutos para evitar sobrecarga
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

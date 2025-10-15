@@ -1,0 +1,14 @@
+[Unit]
+Description=Weekly Database Maintenance Timer
+Requires=db_maintenance.service
+
+[Timer]
+# Executar semanalmente (domingos às 03:00)
+OnCalendar=weekly
+Persistent=true
+
+# Aleatorizar início em até 10 minutos
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

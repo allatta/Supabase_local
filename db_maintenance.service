@@ -1,0 +1,23 @@
+[Unit]
+Description=Database Maintenance Service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/sungrow-sync/venv/bin/python /opt/sungrow-sync/db_maintenance.py
+WorkingDirectory=/opt/sungrow-sync
+Environment="PATH=/opt/sungrow-sync/venv/bin"
+User=pcdb
+Group=pcdb
+
+# Reiniciar em caso de falha
+Restart=on-failure
+RestartSec=60
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

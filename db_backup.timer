@@ -1,0 +1,14 @@
+[Unit]
+Description=Daily Database Backup Timer
+Requires=db_backup.service
+
+[Timer]
+# Executar diariamente às 04:00
+OnCalendar=daily
+Persistent=true
+
+# Aleatorizar início em até 5 minutos
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

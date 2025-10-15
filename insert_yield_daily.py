@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""
+Script para inserir dados do yield_daily.csv na tabela yield_daily do Supabase.
+
+Este script lê o arquivo CSV e insere os dados no Supabase com deduplicação.
+"""
+
+import os
+import sys
+import logging
+from dotenv import load_dotenv
+import pandas as pd
+from supabase import create_client, Client
+
+# Configuração de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('insert_yield_daily.log'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Carregar variáveis de ambiente
+load_dotenv()
+
+# Credenciais Supabase
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    logger.error("SUPABASE_URL ou SUPABASE_ANON_KEY não encontradas no .env")
+    sys.exit(1)
+
+# Inicializar cliente Supabase
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def insert_yield_daily_to_supabase():
+    """Insere dados do yield_daily.csv no Supabase."""
+    csv_file = 'yield_daily.csv'
+    table_name = 'yield_daily'
+
+    logger.info(f"Inserindo dados de {csv_file} em {table_name}...")
+
+    try:
+        # Ler CSV
+        df = pd.read_csv(csv_file)
+        if df.empty:
+            logger.info(f"CSV {csv_file} vazio, pulando inserção")
+            return True
+
+        # Converter tipos de dados
+        if 'date' in df.columns:
+            df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
+
+        # Substituir NaN por None
+        df = df.replace({float('nan'): None})
+
+        # Inserir em lotes
+        batch_size = 1000
+        total_inserted = 0
+
+        for i in range(0, len(df), batch_size):
+            batch = df.iloc[i:i+batch_size]
+            records = batch.to_dict('records')
+
+            try:
+                result = supabase.table(table_name).upsert(records).execute()
+                total_inserted += len(records)
+                logger.info(f"Inseridos {len(records)} registros em {table_name} (lote {i//batch_size + 1})")
+            except Exception as e:
+                logger.error(f"Erro ao inserir lote em {table_name}: {e}")
+                return False
+
+        logger.info(f"Total inserido em {table_name}: {total_inserted}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Erro ao processar {csv_file}: {e}")
+        return False
+
+def main():
+    """Função principal."""
+    logger.info("=== Iniciando inserção de yield_daily ===")
+
+    if insert_yield_daily_to_supabase():
+        logger.info("=== Inserção concluída com sucesso ===")
+        return True
+    else:
+        logger.error("=== Falha na inserção ===")
+        return False
+
+if __name__ == "__main__":
+    success = main()
+    sys.exit(0 if success else 1)

@@ -1,0 +1,26 @@
+[Unit]
+Description=Database Backup Service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/sungrow-sync/venv/bin/python /opt/sungrow-sync/db_backup.py
+WorkingDirectory=/opt/sungrow-sync
+Environment="PATH=/opt/sungrow-sync/venv/bin"
+User=pcdb
+Group=pcdb
+
+# Reiniciar em caso de falha
+Restart=on-failure
+RestartSec=120
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+# Timeout maior para backups grandes
+TimeoutSec=3600
+
+[Install]
+WantedBy=multi-user.target
